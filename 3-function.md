@@ -1,10 +1,12 @@
-#### 
+     因为开发中经常遇到使用数组函数，很早就想找个机会好好总结，后续会坚持更新！今天看到一句话感觉很给力！特地在此勉励自己！
+
+> 平庸与卓越的距离，可能只差2毫米！
+
+                                                                                                             --  2018年09月03日19:36:38
 
 #### 
 
-#### 
-
-1. #### array\_merge\(\);
+1. #### array\_merge\(\);    合并数组
 2. #### array\_keys\(\);
 3. #### array\_filter\(\);
 4. #### in\_array\(\);
@@ -14,7 +16,7 @@
 8. #### array\_values\(\);
 9. #### array\_unique\(\);
 10. #### array\_flip\(\)
-11. #### array\_multisort\(\) 
+11. #### array\_multisort\(\)
 12. #### array\_column\(\)
 13. #### array\_intersect\(\)
 14. #### array\_key\_exists\(\)
@@ -23,7 +25,7 @@
 17. #### array\_product\(\)
 18. #### array\_sum\(\)
 19. #### array\_push\(\)
-20. #### array\_search\(\) 
+20. #### array\_search\(\)
 
     ---
 
@@ -63,13 +65,13 @@
     $data[] = array('volume' => 98, 'edition' => 2);
     $data[] = array('volume' => 86, 'edition' => 6);
     $data[] = array('volume' => 67, 'edition' => 7);
-    
+
     // 取得列的列表
     foreach ($data as $key => $row) {
         $volume[$key]  = $row['volume'];
         $edition[$key] = $row['edition'];
     }
-    
+
     // 先将数据根据 volume 降序排列，出现重复时再根据 edition 升序排列
     // 把 $data 作为最后一个参数，以通用键排序
     array_multisort($volume, SORT_DESC, $edition, SORT_ASC, $data);
