@@ -6,7 +6,7 @@
 
 4. in\_array\(\);
 
-5.  array\_shift\(\);
+5. array\_shift\(\);
 
 6. array\_map\(\);
 
