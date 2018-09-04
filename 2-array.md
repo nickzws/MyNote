@@ -6,5 +6,6 @@ return array_map(function ($v) use ($tagObj) {
 }, array_unique($all));
 ```
 
-
+# mysql方法
+`find_in_set`
 
