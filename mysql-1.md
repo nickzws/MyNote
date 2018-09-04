@@ -8,7 +8,7 @@
 
 3. 停止：\`service mysqld stop\`
 
-_补充：CentOS7 默认安装Mariadb数据库，为安装mysql需要先移除Mariadb数据库\`yum remove mariadb-libs.x86\_64\`      
+_补充：CentOS7 默认安装Mariadb数据库，为安装mysql需要先移除Mariadb数据库\`yum remove mariadb-libs.x86\_64\`        
 _
 
 1. 下载MySQL源：[https://dev.mysql.com/downloads/repo/yum/](https://dev.mysql.com/downloads/repo/yum/)
