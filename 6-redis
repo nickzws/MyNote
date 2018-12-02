@@ -1,0 +1,416 @@
+1. 于键值对
+2. 持5种数据类字符串、哈希、链表、无序集合、有序集合
+3. 支持数据持久化操作
+4. 单个value值512M
+
+## 2-Redis特性
+1. 读写速度快（内存中）
+2. 支持数据类型多
+3. 支持持久化功能（Redis会自动的将数据存储到磁盘上，当redis服务器异常重启，redis会自动将备份文件中的数据还原到内存中）
+
+## 3-查看进程
+1. ps -aux | grep redis  
+2. kill - 9 进程id （-9 强制杀死）
+3. reids.conf 配置文件
+4. 启动客户端 ./redis-cli
+
+## 4-redis的基本使用
+
+```
+127.0.0.1:6379> set name zhangsan
+OK
+127.0.0.1:6379> get name
+"zhangsan"
+```
+1. exists key 检查某个key是否存在
+
+```
+127.0.0.1:6379> exists name
+(integer) 1
+127.0.0.1:6379> exists a
+(integer) 0
+```
+2. del key
+
+```
+127.0.0.1:6379> del name
+(integer) 1
+```
+3. type key  用于检查某个key的数据类型  
+==注意：Redis中无论是字符串、整型、小数都归类于字符串==
+
+```
+127.0.0.1:6379> set name zhang
+OK
+127.0.0.1:6379> set age 22
+OK
+127.0.0.1:6379> set height 1.85
+OK
+127.0.0.1:6379> type name
+string
+127.0.0.1:6379> type age
+string
+127.0.0.1:6379> type height
+string
+```
+4. keys pattern 找出满足条件的key
+
+```
+127.0.0.1:6379> keys *
+1) "age"
+2) "user_17603072757"
+3) "height"
+4) "name"
+```
+
+5. rename oldkey newkey 修改key名称
+
+```
+127.0.0.1:6379> rename name names
+OK
+127.0.0.1:6379> get names
+"zhang"
+```
+6. expire key 某个键的过期时间  
+单位是秒
+
+7. ttl key 查看某个key的过期时间
+
+```
+127.0.0.1:6379> expire names 100
+(integer) 1
+127.0.0.1:6379> ttl names
+(integer) 93
+```
+
+8. select db 选择数据库  
+    1. 在redis的配置项默认指定redis有16个数据库
+    2. 每个数据库之间不会相互影响
+    3. 当选择数据库超过最大的数据库 使用默认数据库
+    4. 默认数据库从0开始
+    
+9. flushdb 清除当前数据库下所有的数据
+
+## 5-数据类型
+### 5-1. 字符串  
+可以包含任何数据，比如jpg图片或者序列化的对象(PHP中对象序列化函数serialize)。
+
+#### 字符串相关命令
+**常用命令**
+![](https://i.imgur.com/GWwqhpL.png)
+1. append 追加的是值、返回长度
+
+```
+127.0.0.1:6379> append names zhaosi
+(integer) 6
+```
+
+2. substr key start end 获取截取后的长度，从0开启且不会改变原数据
+
+```
+127.0.0.1:6379> set  name zhsangweishuang
+OK
+127.0.0.1:6379> get name
+"zhsangweishuang"
+127.0.0.1:6379> substr name 0 5
+"zhsang"
+```
+
+
+### 5.2、链表数据类型(重点)
+#### 5.2.1、链表介绍
+很多个字符串组合在一起的并且有一定顺序关系。在链表的头跟尾都可以进行添加删除元素，因此可以模拟出堆栈效果。链表通过用于消息队列，抢购等应用。
+
+**常用命令**
+总结：
+- 链表自然有左右之分，l\f  
+- pop弹出 push弹入
+- llen长度 lrange范围  (没有r的说法不然乱套了)
+- ltrim 截取（改变了原始数据）
+
+![](https://i.imgur.com/OU8zqcz.png)
+
+1. 添加元素
+lpush，表头加入，后计入的依次加入表头，展示自然从表头显示
+```
+127.0.0.1:6379> lpush ltest a
+(integer) 1
+127.0.0.1:6379> lrange ltest 0 -1
+1) "a"
+127.0.0.1:6379> lpush ltest b
+(integer) 2
+127.0.0.1:6379> lrange ltest 0 -1
+1) "b"
+2) "a"
+```
+
+2. 删除元素
+
+```
+127.0.0.1:6379> lpop ltest
+"b"
+```
+3. 截取元素
+
+```
+(integer) 4
+127.0.0.1:6379> lrange ltest 0 -1
+1) "zhangsan"
+2) "3"
+3) "2"
+4) "1"
+127.0.0.1:6379> ltrim ltest 0 -3
+OK
+127.0.0.1:6379> lrange ltest 0 -1
+1) "zhangsan"
+2) "3"
+```
+#### 使用场景
+记录最后登录的5个用户，每个用户登录先去链表中判断元素个数，小于5加入链表，等于5去掉最先加入的用户id，再写入
+
+### 5.3、哈希
+hash是一个string类型的field和value的映射表。hash特别适合用于存储对象。相较于将对象的每个字段存成单个string类型。将一个对象存储在hash类型中会占用更少的内存，并且可以更方便的存取整个对象。
+
+
+**常用命令**
+总结：
+- hset key field value \hget key
+- hmset \ hmget
+- hexists
+- hdel 
+- hlen
+- hvals
+- hgetall
+
+![](https://i.imgur.com/BP86i10.png)
+
+
+```
+127.0.0.1:6379> hset test  name zhangsan
+(integer) 1
+
+127.0.0.1:6379> hget test name
+"zhangsan"
+
+127.0.0.1:6379> hlen test
+(integer) 1
+
+127.0.0.1:6379> hset test  age 30
+(integer) 1
+
+127.0.0.1:6379> hset test  height 178
+(integer) 1
+
+127.0.0.1:6379> hvals test
+1) "zhangsan"
+2) "30"
+3) "178"
+
+127.0.0.1:6379> hgetall test
+1) "name"
+2) "zhangsan"
+3) "age"
+4) "30"
+5) "height"
+6) "178"
+
+127.0.0.1:6379> hdel test name
+(integer) 1
+
+127.0.0.1:6379> hexists test name 
+(integer) 0
+```
+### 5.4、集合
+所有元素组合在一起就是集合，集合中的数据不能出现重复的情况。集合与集合之间可以进行交际，并集，差集运算。集合可以运用在社交场景上传例如计算好友之间的共同好友。
+
+
+**常用命令**
+总结：
+- srem 删除 
+- sadd 添加
+- scard 长度
+- sinter 交集、sunion并集、sdiff差集
+
+![](https://i.imgur.com/N67QpoP.png)
+
+
+```
+127.0.0.1:6379> sadd stest a
+(integer) 1
+127.0.0.1:6379> sadd stest b
+(integer) 1
+127.0.0.1:6379> sadd stest c
+(integer) 1
+127.0.0.1:6379> sadd stest d
+(integer) 1
+127.0.0.1:6379> sadd stest d
+(integer) 0
+127.0.0.1:6379> scard stest
+(integer) 4
+
+127.0.0.1:6379> smembers stest
+1) "b"
+2) "c"
+3) "a"
+4) "d"
+
+//sinter 交集、sunion并集、sdiff差集
+127.0.0.1:6379> sinter s1 s2
+1) "c"
+2) "d"
+127.0.0.1:6379> sunion s1 s2
+1) "d"
+2) "e"
+3) "b"
+4) "c"
+5) "a"
+127.0.0.1:6379> sdiff s1 s2
+1) "b"
+2) "a"
+```
+
+### 5.5、有序集合
+有序集合跟集合一样，但是增加一个score权重(分值)参数，用于排序。
+
+**常用命令**
+1. zadd key score member 添加元素到集合中
+2. zrem key member 删除指定元素
+3. zcard key返回集合中的元素个数
+4. zincrby key num member 将member上的分值增加num
+5. zrank key member返回指定元素在集合中的排名 score从小到大排列
+6. zrange key start end 获取集合中指定区间的元素
+
+
+```
+127.0.0.1:6379> zadd ztest 9 lisi
+(integer) 1
+127.0.0.1:6379> zcard ztest
+(integer) 2
+```
+
+## 6、 持久化
+1. 为什么要持久化  
+因为redis是存在内存中，当服务器重启或者redis异常会导致数据丢失
+
+2. 持久化原理  
+==Redis会按照一个规律定期将内存中数据转存储到磁盘上==，当服务异常，redis服务启动之后会自动将数据还原到内存中
+
+3. 快照持久化(默认方式也叫snap shotting)
+4. 关于备份文件的地址  
+==快照方式默认就开启，默认文件所在位置是在redis根目录下dump.rdb文件==
+==redis配置文件是redis-conf==
+
+
+```
+//指定备份文件名称
+# The filename where to dump the DB
+dbfilename dump.rdb
+
+//指定备份文件存储的地址
+# Note that you must specify a directory here, not a file name.
+dir ./
+```
+
+### 6-1、手动备份
+手动备份有两种方式，在客户端可以使用bgsave跟save这两个命令实现备份
+
+1. bgsave:后台备份方式。此方式redis会用一个进程来实现备份
+2. Save：前台备份方式。此方式会阻塞用户请求，在备份期间不能操作数据
+
+```
+127.0.0.1:6379> save
+OK
+127.0.0.1:6379> bgsave
+Background saving started
+```
+
+### 6-2、自动备份
+自动备份的频率受配置文件影响，在配置文件中有三个save参数，该参数控制了redis自动备份的频率  
+详情查看redis-conf  
+
+```
+#   save ""
+
+save 900 1
+save 300 10
+save 60 10000
+```
+
+1. save 900 1   
+距离上一次备份900秒(针对上一次备份)之内有一个key发生变化就触发备份
+2. save 300 10    
+距离上一次备份300秒有10个key发生变化就触发备份
+3. save 60 10000  
+距离上次备份60秒有1万个key变化就触发备份
+此处三个save只要有一个满足条件就会触发备份
+
+问题：16:20此时触发备份，下次备份将会发生在16:50 在此期间也在写入数据，突然重启服务器。当redis再次启动时会还原数据，但是只会还原到16:20这个点数据，16:20之后的操作的数据都会丢失(==也就是大于15分钟的操作，会带来风险==)
+
+### 6-3、AOF持久化
+1. 原理  
+将每一个执行修改的命名都写入到文件中。下次重启时按照命令顺序逐个执行。
+2. 设置redis-conf
+
+```
+# Please check http://redis.io/topics/persistence for more information.
+
+appendonly no
+
+# The name of the append only file (default: "appendonly.aof")
+
+appendfilename "appendonly.aof"
+```
+1️⃣、开启aof持久化会清空数据库中数据  
+2️⃣、设置后需要重启redis操作（appendonly yes)
+
+**重启操作**  
+
+```
+[root@VM_0_5_centos redis-4.0.11]# ps -aux | grep redis
+root      6002  0.0  0.1 142120  2648 ?        Sl   Nov25   8:49 ./redis-server *:6379
+root     11936  0.0  0.0  11928  1152 pts/2    S+   12:09   0:00 ./redis-cli
+root     12681  0.0  0.0  11928  1156 pts/3    S+   12:18   0:00 ./redis-cli
+root     13809  0.0  0.0  11928  1160 pts/4    S+   12:32   0:00 ./redis-cli
+root     15300  0.0  0.0  11928  1160 pts/5    S+   12:50   0:00 ./redis-cli
+root     16194  0.0  0.0  11928  1172 pts/6    S+   13:00   0:00 ./redis-cli
+root     19179  0.0  0.2 151300  5112 pts/7    S+   13:36   0:00 vim redis.conf
+root     20096  0.0  0.0 112700   960 pts/8    R+   13:47   0:00 grep --color=auto redis
+[root@VM_0_5_centos redis-4.0.11]# kill 19179
+[root@VM_0_5_centos redis-4.0.11]# kill -9 6002
+```
+
+3. 关于aof命令写入磁盘中的频率
+
+```
+# appendfsync always
+appendfsync everysec
+```
+- appendfsync always 每次写入一个命令就刷新缓存中数据到磁盘，高效但是影响服务器性能
+- 
+- appendfsync everysec：
+每秒钟刷新一次缓存中数据到磁盘。
+
+- appendfsync no：由操作系统决定
+此三种方式推荐使用每秒刷新一次命令道磁盘中
+
+4. 关于aof文件大小  ==BGREWRITEAOF==  
+当随着时间变化，aof文件会越来越大，并且里面有很多都是重复操作(例如多次Incr可以合并为一个set即可)，可以使用BGREWRITEAOF命令将aof文件进行压缩。同bgsave一样也是后台进行任务
+
+## 7、主从复制(重点重点)
+两台服务器，当一台服务器数据发送变化，另外一台服务数据也跟着发送变化。
+1. 当做热备服务器，一旦服务器出现故障，整个业务可以立马的迁移到备份服务器上。
+2.  作为读写分离的一个基础。
+3. 可以专用于后台统计相关逻辑比较强的运算
+
+### 7-1、实现redis主从复制
+将192.168.2.131设置为主服务(写数据的服务。master)  
+将192.168.2.130设置为从服务器(同步主服务器的数据即可。slave)  
+配置步骤：  
+①先启动主服务，redis服务正常启动，注意主服务器的防火墙(关闭防火墙或者开放6379端口)  
+②修改从服务器配置文件  
+
+
+```
+slaveof 192.168.2.131 6379
+```
+注意点：设置为从服务器之后不能写入数据
